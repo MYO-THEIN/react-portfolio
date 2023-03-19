@@ -24,32 +24,31 @@ const socials = [
   	{
     	icon: faStackOverflow,
     	url: "https://stackoverflow.com",
-  	},
+  	}
 ];
 
 const Header = () => {
-	let transformStyle = useRef("");
-	let position = useRef("fixed");
+	let headerRef = useRef(null);
 
 	useEffect(() => {
-		let prevScrollPosition = window.pageYOffset;
+		let prevScrollPosition = window.scrollY;
 
 		const handleScroll = ()=>{
-			const currentScrollPosition = window.pageYOffset;
+			const currentScrollPosition = window.scrollY;
+			const headerElement = headerRef.current;
+			if (!headerElement) return;
+
 			//scrolls up
 			if (prevScrollPosition > currentScrollPosition) {
-				transformStyle.current = { "translateY": 0 };
-				position.current = "fixed";
+				headerElement.style.transform = "translateY(0)";
 			}
 			//scrolls down 
 			else {
-				transformStyle.current = { "translateY": -200 };
-				position.current = "relative";
+				headerElement.style.transform = "translateY(-200px)";
 			}
 
 			prevScrollPosition = currentScrollPosition;
 		}
-
 		window.addEventListener("scroll", handleScroll);
 
 		return ()=>{
@@ -70,23 +69,23 @@ const Header = () => {
   	}
 
   	return (
-		<Box position={position} top={0} left={0} right={0} translateY={0} transitionProperty="transform" transitionDuration="0.3s" 
-			transitionTimingFunction="ease-in-out" backgroundColor="#18181b">
-      		<Box color="white" maxWidth="1280px" margin="0 auto" transform={transformStyle}>
+		<Box position="fixed" top={0} left={0} right={0} translateY={0} transitionProperty="transform" transitionDuration="0.3s" 
+			transitionTimingFunction="ease-in-out" backgroundColor="#18181b" ref={headerRef}>
+      		<Box color="white" maxWidth="1280px" margin="0 auto">
 				<HStack px={16} py={4} justifyContent="space-between" alignItems="center">
 					<nav>
-						{socials.map(s => {
-							return (
-								<a key={s.url} href={s.url} style={{ marginLeft: '0.5em' }}>
-									<FontAwesomeIcon icon={s.icon} size="2x" />
+						<HStack spacing={8}>
+							{socials.map(s => (
+								<a key={s.url} href={s.url} target="_blank" rel="noreferrer">
+									<FontAwesomeIcon icon={s.icon} size="2x" key={s.url} />
 								</a>
-							);
-						})}
+							))}
+						</HStack>
 					</nav>
 					<nav>
 						<HStack spacing={8}>
-							<a href="/#projects-section" onClick={handleClick("projects")}>Projects</a>
-							<a href="/#contactme-section" onClick={handleClick("contactme")}>Contact Me</a>
+							<a href="#projects-section" onClick={handleClick("projects")}>Projects</a>
+							<a href="#contactme-section" onClick={handleClick("contactme")}>Contact Me</a>
 						</HStack>
 					</nav>
 				</HStack>
@@ -94,4 +93,5 @@ const Header = () => {
 		</Box>
 	);
 };
+
 export default Header;

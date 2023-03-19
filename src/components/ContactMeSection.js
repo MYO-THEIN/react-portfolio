@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useFormik } from "formik";
-import { Box, Button, FormControl, FormLabel, Heading, Input, Select, Textarea, VStack } from "@chakra-ui/react";
+import { Box, Button, FormControl, FormErrorMessage, FormLabel, Heading, Input, Select, Textarea, VStack } from "@chakra-ui/react";
+import * as Yup from 'yup';
 import FullScreenSection from "./FullScreenSection";
 import useSubmit from "../hooks/useSubmit";
 import { useAlertContext } from "../context/alertContext";
@@ -11,37 +12,6 @@ const LandingSection = () => {
 	const { response, submit, isLoading } = useSubmit();
 	const { onOpen } = useAlertContext();
 
-	const validate = values => {
-		const errors = {};
-		// firstName
-		if (!values.firstName) {
-			errors.firstName = "Required";
-		}
-
-		// email
-		if (!values.email) {
-			errors.email = "Required";
-		} else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)) {
-			errors.email = "Invalid email address";
-		}
-
-		// type
-		if (!values.type) {
-			errors.type = "Required";
-		} else if (values.type === "chooseOne") {
-			errors.type = "Choose one of the options";
-		}
-
-		// comment
-		if (!values.comment) {
-			errors.comment = "Required";
-		} else if (values.comment.length < 25) {
-			errors.comment = "Must be at least 25 characters";
-		}
-  
-		return errors;
-	};
-
 	const formik = useFormik({
     	initialValues: {
 			firstName: "",
@@ -49,16 +19,23 @@ const LandingSection = () => {
 			type: "",
 			comment: ""
 		},
-		validate,
-    	onSubmit: async (values, { setSubmitting, resetForm }) => {
-			setSubmitting(false);
-			await submit("http://www.google.com", values);
-			if (response) {
-				onOpen(response.type, response.message);
-				resetForm();
-			}
-		}
+    	onSubmit: (values) => {
+			submit("http://www.google.com", values);
+		},
+		validationSchema: Yup.object({
+			firstName: Yup.string().required("Required"),
+			email: Yup.string().email("Invalid email address").required("Required"),
+			comment: Yup.string().min(25, "Must be at least 25 characters").required("Required")
+		})
 	});
+
+	useEffect(()=>{
+		if (response) {
+			onOpen(response.type, response.message);
+			if (response.type === "success")
+				formik.resetForm();
+		}
+	}, [response]);
 
 	return (
 		<FullScreenSection isDarkBackground backgroundColor="#512DA8" py={16} spacing={8}>
@@ -67,41 +44,31 @@ const LandingSection = () => {
         		<Box p={6} rounded="md" w="100%">
 					<form onSubmit={formik.handleSubmit}>
 						<VStack spacing={4}>
-							<FormControl isInvalid={false}>
+							<FormControl isInvalid={formik.touched.firstName && !!formik.errors.firstName}>
 								<FormLabel htmlFor="firstName">Name</FormLabel>
-								<Input id="firstName" name="firstName" value={formik.values.firstName} onChange={formik.handleChange} onBlur={formik.handleBlur} 
-									style={formik.errors.firstName ? {border: "2px solid red"} : null} />
-								{formik.errors.firstName ? 
-									<div style={{color: "red"}}>{formik.errors.firstName}</div> : null}
+								<Input id="firstName" name="firstName" {...formik.getFieldProps("firstName")} />
+								<FormErrorMessage>{formik.errors.firstName}</FormErrorMessage>
 							</FormControl>
 			
-							<FormControl isInvalid={false}>
+							<FormControl isInvalid={formik.touched.email && !!formik.errors.email}>
 								<FormLabel htmlFor="email">Email</FormLabel>
-								<Input id="email" name="email" type="email" value={formik.values.email} onChange={formik.handleChange} onBlur={formik.handleBlur} 
-									style={formik.errors.email ? {border: "2px solid red"} : null} />
-								{formik.errors.email ? 
-									<div style={{color: "red"}}>{formik.errors.email}</div> : null}
+								<Input id="email" name="email" {...formik.getFieldProps("email")} />
+								<FormErrorMessage>{formik.errors.email}</FormErrorMessage>
 							</FormControl>
 			
-							<FormControl isInvalid={false}>
+							<FormControl>
 								<FormLabel htmlFor="type">Type of enquiry</FormLabel>
-								<Select id="type" name="type" value={formik.values.type} onChange={formik.handleChange} onBlur={formik.handleBlur}
-									style={formik.errors.type ? {border: "2px solid red"} : null}>
-									<option value="chooseOne">choose ...</option>
+								<Select id="type" name="type" {...formik.getFieldProps("type")}>
 									<option value="hireMe">Freelance project proposal</option>
 									<option value="openSource">Open source consultancy session</option>
 									<option value="other">Other</option>
 								</Select>
-								{formik.errors.type ?
-									<div style={{color: "red"}}>{formik.errors.type}</div> : null}
 							</FormControl>
 			
-							<FormControl isInvalid={false}>
+							<FormControl isInvalid={formik.touched.comment && !!formik.errors.comment}>
 								<FormLabel htmlFor="comment">Your message</FormLabel>
-								<Textarea id="comment" name="comment" height={250} value={formik.values.comment} onChange={formik.handleChange} onBlur={formik.handleBlur} 
-									style={formik.errors.comment ? {border: "2px solid red"} : null} />
-								{formik.errors.comment ?
-									<div style={{color: "red"}}>{formik.errors.comment}</div> : null}
+								<Textarea id="comment" name="comment" {...formik.getFieldProps("comment")} />
+								<FormErrorMessage>{formik.errors.comment}</FormErrorMessage>
 							</FormControl>
 			
 							<Button type="submit" colorScheme="purple" width="full">
